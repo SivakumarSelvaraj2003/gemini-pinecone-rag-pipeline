@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internal Policy AI Chat</title>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <h2>Document Hub</h2>
+            <div id="upload-container" class="upload-box">
+                <input type="file" id="pdf-input" accept="application/pdf" hidden>
+                <button id="upload-btn" class="btn">Select PDF Manual</button>
+                <p id="upload-status" class="status-text">No file uploaded</p>
+            </div>
+        </aside>
+
+        <main class="chat-area">
+            <header>
+                <h2>AI Assistant</h2>
+            </header>
+            
+            <div id="chat-history" class="chat-history">
+                <div class="message bot">Welcome! Upload a PDF to start asking questions.</div>
+            </div>
+
+            <div class="chat-input-container">
+                <input type="text" id="chat-input" placeholder="Ask a question about the document..." disabled>
+                <button id="send-btn" class="btn" disabled>Send</button>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="./js/main.js"></script>
+</body>
+</html>

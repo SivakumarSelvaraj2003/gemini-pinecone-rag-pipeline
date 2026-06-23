@@ -1,0 +1,6 @@
+# Dependency folders (ignore for both frontend and backend)
+**/node_modules/
+
+# Environments and Secrets (CRITICAL: keeps your Gemini & Pinecone keys safe)
+**/.env
+.env*
