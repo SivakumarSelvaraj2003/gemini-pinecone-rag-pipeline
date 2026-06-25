@@ -6,7 +6,7 @@ console.log("Index Name:", process.env.PINECONE_INDEX_NAME);
 const index = pc.index(process.env.PINECONE_INDEX_NAME);
 
 // Saves vectors into Pinecone
-async function storeVectors(chunks, embeddings) {
+async function storeVectors(chunks, embeddings, fileName) {
   if (
     !chunks ||
     chunks.length === 0 ||
@@ -21,7 +21,10 @@ async function storeVectors(chunks, embeddings) {
     return {
       id: `chunk-${Date.now()}-${i}`,
       values: Array.from(embeddings[i]).map((num) => Number(num)),
-      metadata: { text: chunk },
+      metadata: {
+        text: chunk,
+        source_file: fileName, // 👈 Attach the sticky note!
+      },
     };
   });
 
@@ -39,26 +42,32 @@ async function storeVectors(chunks, embeddings) {
   console.log("Values length:", sanitizedVectors[0]?.values?.length);
   console.log("First 5 values:", sanitizedVectors[0]?.values?.slice(0, 5));
 
- console.log("Is Array?", Array.isArray(sanitizedVectors));
- console.log("Vector Count:", sanitizedVectors.length);
+  console.log("Is Array?", Array.isArray(sanitizedVectors));
+  console.log("Vector Count:", sanitizedVectors.length);
 
- await index.upsert({
-   records: sanitizedVectors,
- });
+  await index.upsert({
+    records: sanitizedVectors,
+  });
 
- console.log("✅ Upload successful");
+  console.log("✅ Upload successful");
 }
 
 // Searches Pinecone for the most relevant text based on the user's question
-async function searchSimilar(queryEmbedding) {
-  // Purify the search vector just like we did for the upload vectors
+async function searchSimilar(queryEmbedding, targetFilename) {
   const cleanSearchVector = Array.from(queryEmbedding).map((n) => Number(n));
 
-  const queryResponse = await index.query({
+  const queryParams = {
     vector: cleanSearchVector,
     topK: 3,
     includeMetadata: true,
-  });
+  };
+
+  // 🚨 Apply the filter if a specific file is requested!
+  if (targetFilename) {
+    queryParams.filter = { source_file: targetFilename };
+  }
+
+  const queryResponse = await index.query(queryParams);
 
   return queryResponse.matches.map((match) => match.metadata.text).join("\n\n");
 }

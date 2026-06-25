@@ -37,8 +37,11 @@ export class Chatbox {
     this.renderMessage("Thinking...", "bot", true);
 
     try {
-      // THE FIX: Call the real backend Node.js server!
-      const response = await this.api.askQuestion(text);
+      // Get the currently active file we saved earlier
+      const targetFile = window.currentActiveFile;
+
+      // Send BOTH the text and the filename to the API!
+      const response = await this.api.askQuestion(text, targetFile);
 
       // Remove the loading text
       this.removeLoadingMessage();

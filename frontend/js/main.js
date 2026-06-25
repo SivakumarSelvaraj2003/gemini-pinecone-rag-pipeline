@@ -10,9 +10,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Initialize the Uploader
     // We pass a callback function so the Uploader can tell the Chatbox to unlock
     // once the PDF is successfully processed by the backend.
-    const uploader = new Uploader(ApiService, () => {
-        chatbox.enable();
-        chatbox.renderMessage("Document processed! What would you like to know?", "bot");
+    const uploader = new Uploader(ApiService, (uniqueFileName) => {
+      // Save the unique name globally so the chatbox knows what we are looking at
+      window.currentActiveFile = uniqueFileName;
+
+      chatbox.enable();
+      chatbox.renderMessage(
+        "Document processed! What would you like to know?",
+        "bot",
+      );
     });
 
     console.log("Frontend architecture initialized successfully.");

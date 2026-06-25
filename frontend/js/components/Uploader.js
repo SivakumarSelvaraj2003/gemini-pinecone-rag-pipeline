@@ -36,11 +36,12 @@ export class Uploader {
 
     try {
       // THE FIX: Call your actual api.js function!
-      const result = await this.api.uploadDocument(file);
+     const result = await this.api.uploadDocument(file);
 
-      this.statusElement.innerText = "Processing complete! Ready to chat.";
-      this.statusElement.style.color = "green";
-      this.onUploadSuccess(); // Unlock the chat box
+     this.statusElement.innerText = "Processing complete! Ready to chat.";
+     this.statusElement.style.color = "green";
+     // Pass the unique name from the server to the callback!
+     this.onUploadSuccess(result.savedFileName);
     } catch (error) {
       this.statusElement.innerText = "Upload failed.";
       this.statusElement.style.color = "red";

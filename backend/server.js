@@ -36,13 +36,18 @@ app.post("/api/upload", upload.single("pdf"), async (req, res) => {
     console.log("2. Generating AI Embeddings...");
     const embeddings = await createEmbeddings(chunks);
 
-    console.log("3. Saving to Pinecone Database...");
-    await storeVectors(chunks, embeddings);
+   console.log("3. Saving to Pinecone Database...");
+   // Create a 100% unique filename using the current timestamp
+   const uniqueFileName = `${Date.now()}_${req.file.originalname}`;
 
-    res.json({
-      success: true,
-      message: "PDF processed and stored successfully!",
-    });
+   // Pass the unique name to the database
+   await storeVectors(chunks, embeddings, uniqueFileName);
+
+   res.json({
+     success: true,
+     message: "PDF processed and stored successfully!",
+     savedFileName: uniqueFileName, // Send the unique name back to the frontend
+   });
   } catch (error) {
     // Print heavily to the backend terminal
     console.error("🚨 BACKEND UPLOAD ERROR:", error);
@@ -58,13 +63,18 @@ app.post("/api/upload", upload.single("pdf"), async (req, res) => {
 // --- ENDPOINT 2: Chat with the Document ---
 app.post("/api/chat", async (req, res) => {
   try {
-    const userMessage = req.body.message;
+   const userMessage = req.body.message;
+   const targetFilename = req.body.targetFilename; // Grab the secret nametag!
 
-    console.log("1. Embedding user question...");
-    const questionEmbedding = await createEmbeddings([userMessage]);
+   console.log("1. Embedding user question...");
+   const questionEmbedding = await createEmbeddings([userMessage]);
 
-    console.log("2. Searching Vector DB for relevant context...");
-    const relevantContext = await searchSimilar(questionEmbedding[0]);
+   console.log(`2. Searching Vector DB inside: ${targetFilename}...`);
+   // Pass the nametag to the search function
+   const relevantContext = await searchSimilar(
+     questionEmbedding[0],
+     targetFilename,
+   );
 
     console.log("3. Generating AI answer...");
     const answer = await generateAnswer(userMessage, relevantContext);
