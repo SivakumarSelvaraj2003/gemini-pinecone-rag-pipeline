@@ -24,8 +24,10 @@ export class Uploader {
   }
 
   async handleUpload(file) {
-    if (!file || file.type !== "application/pdf") {
-      this.statusElement.innerText = "Please select a valid PDF.";
+    // ✅ NEW CODE: Just check if a file exists.
+    // We let the HTML 'accept' attribute handle the allowed file types!
+    if (!file) {
+      this.statusElement.innerText = "Please select a valid file.";
       this.statusElement.style.color = "red";
       return;
     }
@@ -36,12 +38,12 @@ export class Uploader {
 
     try {
       // THE FIX: Call your actual api.js function!
-     const result = await this.api.uploadDocument(file);
+      const result = await this.api.uploadDocument(file);
 
-     this.statusElement.innerText = "Processing complete! Ready to chat.";
-     this.statusElement.style.color = "green";
-     // Pass the unique name from the server to the callback!
-     this.onUploadSuccess(result.savedFileName);
+      this.statusElement.innerText = "Processing complete! Ready to chat.";
+      this.statusElement.style.color = "green";
+      // Pass the unique name from the server to the callback!
+      this.onUploadSuccess(result.savedFileName);
     } catch (error) {
       this.statusElement.innerText = "Upload failed.";
       this.statusElement.style.color = "red";

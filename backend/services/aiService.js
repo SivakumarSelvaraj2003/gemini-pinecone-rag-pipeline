@@ -43,4 +43,41 @@ async function generateAnswer(question, relevantContext) {
     return result.response.text();
 }
 
-module.exports = { createEmbeddings, generateAnswer };
+// 🚨 NEW FUNCTION: Generate Human-like Audio with Gemini
+async function generateSpeech(text) {
+  console.log("Generating audio with Gemini TTS...");
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-tts-preview:generateContent?key=${process.env.GEMINI_API_KEY}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: text }] }],
+      generationConfig: {
+        responseModalities: ["AUDIO"],
+        speechConfig: {
+          voiceConfig: {
+            // "Aoede", "Kore", "Puck", "Charon", or "Fenrir"
+            prebuiltVoiceConfig: { voiceName: "Aoede" },
+          },
+        },
+      },
+    }),
+  });
+
+  const data = await response.json();
+
+  // Grab the actual inline data object
+  const inlineData = data.candidates[0].content.parts[0].inlineData;
+
+  // Return BOTH the base64 audio and the correct format (mimeType)
+  return {
+    base64: inlineData.data,
+    mimeType: inlineData.mimeType, // Gemini usually returns 'audio/mpeg'
+  };
+}
+
+// ⚠️ Don't forget to export the new function at the very bottom!
+module.exports = { createEmbeddings, generateAnswer, generateSpeech };
+

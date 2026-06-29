@@ -36,4 +36,19 @@ export const ApiService = {
       throw error;
     }
   },
+
+  // Sends text to the backend and gets the beautiful voice back
+  async getAudioFromText(text) {
+    try {
+      const response = await fetch(`${API_URL}/tts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text }),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Audio fetch failed:", error);
+      throw error;
+    }
+  },
 };

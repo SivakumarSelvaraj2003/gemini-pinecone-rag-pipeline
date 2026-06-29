@@ -195,3 +195,27 @@ body {
     background-color: #94a3b8;
     cursor: not-allowed;
 }
+
+
+/* =========================================
+   6. Audio Read Aloud Button
+   ========================================= */
+.audio-btn {
+    display: block;
+    margin-top: 12px;
+    background-color: transparent;
+    border: 1px solid #cbd5e1;
+    color: var(--text-muted);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.audio-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}

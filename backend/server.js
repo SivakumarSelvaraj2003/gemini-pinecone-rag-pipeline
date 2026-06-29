@@ -4,8 +4,10 @@ const multer = require("multer");
 require("dotenv").config();
 
 // Import our Lego Blocks
-const { processPdf } = require("./services/pdfService");
-const { createEmbeddings, generateAnswer } = require("./services/aiService");
+// Import our Lego Blocks
+const { processUniversalFile } = require("./services/fileService"); // 👈 Changed!
+// Change your import to include generateSpeech
+const { createEmbeddings, generateAnswer, generateSpeech } = require("./services/aiService");
 const { storeVectors, searchSimilar } = require("./services/vectorDb");
 
 const app = express();
@@ -21,8 +23,14 @@ app.post("/api/upload", upload.single("pdf"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
-    console.log("1. Extracting text from PDF...");
-    const chunks = await processPdf(req.file.buffer);
+    console.log("1. Running Universal File Router...");
+
+    // Grab both the buffer AND the file's digital passport (mimetype)
+    const fileBuffer = req.file.buffer;
+    const fileMime = req.file.mimetype;
+
+    // Pass them both to the new Traffic Cop
+    const chunks = await processUniversalFile(fileBuffer, fileMime);
 
     // If chunks is empty, STOP here and return a 400 error to the frontend
     if (!chunks || chunks.length === 0) {
@@ -36,18 +44,18 @@ app.post("/api/upload", upload.single("pdf"), async (req, res) => {
     console.log("2. Generating AI Embeddings...");
     const embeddings = await createEmbeddings(chunks);
 
-   console.log("3. Saving to Pinecone Database...");
-   // Create a 100% unique filename using the current timestamp
-   const uniqueFileName = `${Date.now()}_${req.file.originalname}`;
+    console.log("3. Saving to Pinecone Database...");
+    // Create a 100% unique filename using the current timestamp
+    const uniqueFileName = `${Date.now()}_${req.file.originalname}`;
 
-   // Pass the unique name to the database
-   await storeVectors(chunks, embeddings, uniqueFileName);
+    // Pass the unique name to the database
+    await storeVectors(chunks, embeddings, uniqueFileName);
 
-   res.json({
-     success: true,
-     message: "PDF processed and stored successfully!",
-     savedFileName: uniqueFileName, // Send the unique name back to the frontend
-   });
+    res.json({
+      success: true,
+      message: "PDF processed and stored successfully!",
+      savedFileName: uniqueFileName, // Send the unique name back to the frontend
+    });
   } catch (error) {
     // Print heavily to the backend terminal
     console.error("🚨 BACKEND UPLOAD ERROR:", error);
@@ -84,6 +92,26 @@ app.post("/api/chat", async (req, res) => {
     console.error(error);
     res.status(500).json({ error: "Failed to generate answer" });
   }
+});
+
+
+// --- ENDPOINT 3: Generate Audio Answer ---
+app.post("/api/tts", async (req, res) => {
+    try {
+        const text = req.body.text;
+        if (!text) return res.status(400).json({ error: "No text provided" });
+
+        const audioData = await generateSpeech(text);
+
+        // Send both pieces of data to the frontend
+        res.json({
+          audioBase64: audioData.base64,
+          mimeType: audioData.mimeType,
+        });
+    } catch (error) {
+        console.error("Audio Generation Error:", error);
+        res.status(500).json({ error: "Failed to generate audio" });
+    }
 });
 
 // Start the server

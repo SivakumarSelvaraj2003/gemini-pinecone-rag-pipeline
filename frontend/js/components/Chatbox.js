@@ -67,7 +67,55 @@ export class Chatbox {
     const div = document.createElement("div");
     div.className = `message ${sender}`;
     if (isLoading) div.id = "loading-msg";
-    div.innerText = text;
+
+    // 1. Put the message text in its own span
+    const textSpan = document.createElement("span");
+    textSpan.innerText = text;
+    div.appendChild(textSpan);
+
+    // 2. 🚨 ADD AUDIO BUTTON (Only for actual bot answers)
+    if (sender === "bot" && !isLoading) {
+      const audioBtn = document.createElement("button");
+      audioBtn.className = "audio-btn";
+      audioBtn.innerHTML = "🔊 Read Aloud";
+
+     audioBtn.onclick = async () => {
+       // 1. If it's already playing, stop it!
+       if (window.currentAudio && !window.currentAudio.paused) {
+         window.currentAudio.pause();
+         audioBtn.innerHTML = "🔊 Read Aloud";
+         return;
+       }
+
+       // 2. Show a loading state
+       audioBtn.innerHTML = "⏳ Generating Voice...";
+
+       try {
+         // 3. Ask your server for the Gemini Voice
+         // 3. Ask your server for the Gemini Voice
+         const response = await this.api.getAudioFromText(text);
+
+         // 4. Create the player using the EXACT format Gemini provided
+         window.currentAudio = new Audio(
+           `data:${response.mimeType};base64,${response.audioBase64}`,
+         );
+
+         // 5. Play the beautiful voice!
+         window.currentAudio.play();
+         audioBtn.innerHTML = "⏹️ Stop Audio";
+
+         // 6. Reset button when finished
+         window.currentAudio.onended = () => {
+           audioBtn.innerHTML = "🔊 Read Aloud";
+         };
+       } catch (err) {
+         console.error(err);
+         audioBtn.innerHTML = "❌ Audio Error";
+       }
+     };
+
+      div.appendChild(audioBtn);
+    }
 
     this.chatHistory.appendChild(div);
     this.chatHistory.scrollTop = this.chatHistory.scrollHeight; // Auto-scroll to bottom
