@@ -1,4 +1,5 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { WaveFile } = require("wavefile");
 require('dotenv').config();
 
 // Initialize Google SDK with your new free API key
@@ -43,7 +44,6 @@ async function generateAnswer(question, relevantContext) {
     return result.response.text();
 }
 
-// 🚨 NEW FUNCTION: Generate Human-like Audio with Gemini
 async function generateSpeech(text) {
   console.log("Generating audio with Gemini TTS...");
 
@@ -57,24 +57,43 @@ async function generateSpeech(text) {
       generationConfig: {
         responseModalities: ["AUDIO"],
         speechConfig: {
-          voiceConfig: {
-            // "Aoede", "Kore", "Puck", "Charon", or "Fenrir"
-            prebuiltVoiceConfig: { voiceName: "Aoede" },
-          },
+          voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } },
         },
       },
     }),
   });
 
   const data = await response.json();
+  if (data.error) throw new Error(`Gemini API Error: ${data.error.message}`);
 
-  // Grab the actual inline data object
-  const inlineData = data.candidates[0].content.parts[0].inlineData;
+  const inlineData = data.candidates[0].content.parts.find(
+    (p) => p.inlineData,
+  )?.inlineData;
+  if (!inlineData) throw new Error("No audio returned from Gemini");
 
-  // Return BOTH the base64 audio and the correct format (mimeType)
+  // 🚨 2. THE WAV CONVERSION MAGIC
+  const pcmBuffer = Buffer.from(inlineData.data, "base64");
+
+  // 👇 THE FIX: Group the raw 8-bit bytes into 16-bit audio samples!
+  const int16Samples = new Int16Array(
+    pcmBuffer.buffer,
+    pcmBuffer.byteOffset,
+    pcmBuffer.length / 2,
+  );
+
+  const wav = new WaveFile();
+  // Feed the properly formatted 16-bit samples into the WAV creator
+  wav.fromScratch(1, 24000, "16", int16Samples);
+
+  
+  // We wrap the Uint8Array in a Node Buffer to properly encode it to Base64
+  const wavBase64 = Buffer.from(wav.toBuffer()).toString("base64");
+
+  
+
   return {
-    base64: inlineData.data,
-    mimeType: inlineData.mimeType, // Gemini usually returns 'audio/mpeg'
+    base64: wavBase64,
+    mimeType: "audio/wav", // 👈 Now we can confidently tell the frontend it is a WAV!
   };
 }
 

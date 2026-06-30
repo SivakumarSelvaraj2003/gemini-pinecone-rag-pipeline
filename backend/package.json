@@ -16,6 +16,7 @@
     "express": "^5.2.1",
     "multer": "^2.2.0",
     "openai": "^6.43.0",
-    "pdf-parse": "^1.1.1"
+    "pdf-parse": "^1.1.1",
+    "wavefile": "^11.0.0"
   }
 }

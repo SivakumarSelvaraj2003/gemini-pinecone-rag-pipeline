@@ -80,33 +80,41 @@ export class Chatbox {
       audioBtn.innerHTML = "🔊 Read Aloud";
 
      audioBtn.onclick = async () => {
-       // 1. If it's already playing, stop it!
+       // 1. If it's already playing, pause it easily!
        if (window.currentAudio && !window.currentAudio.paused) {
          window.currentAudio.pause();
-         audioBtn.innerHTML = "🔊 Read Aloud";
+         audioBtn.innerHTML = "▶️ Resume Audio";
+         return;
+       } else if (
+         window.currentAudio &&
+         window.currentAudio.paused &&
+         window.currentAudio.currentTime > 0
+       ) {
+         // If it was paused, resume it!
+         window.currentAudio.play();
+         audioBtn.innerHTML = "⏸️ Pause Audio";
          return;
        }
 
-       // 2. Show a loading state
-       audioBtn.innerHTML = "⏳ Generating Voice...";
+       audioBtn.innerHTML = "⏳ Generating...";
 
        try {
-         // 3. Ask your server for the Gemini Voice
-         // 3. Ask your server for the Gemini Voice
+         // 2. Fetch the WAV Base64 from your server
          const response = await this.api.getAudioFromText(text);
 
-         // 4. Create the player using the EXACT format Gemini provided
+         // 3. Create a standard HTML Audio player (No atob() needed!)
          window.currentAudio = new Audio(
            `data:${response.mimeType};base64,${response.audioBase64}`,
          );
 
-         // 5. Play the beautiful voice!
+         // 4. Play it!
          window.currentAudio.play();
-         audioBtn.innerHTML = "⏹️ Stop Audio";
+         audioBtn.innerHTML = "⏸️ Pause Audio";
 
-         // 6. Reset button when finished
+         // 5. Reset button when finished
          window.currentAudio.onended = () => {
            audioBtn.innerHTML = "🔊 Read Aloud";
+           window.currentAudio = null;
          };
        } catch (err) {
          console.error(err);
