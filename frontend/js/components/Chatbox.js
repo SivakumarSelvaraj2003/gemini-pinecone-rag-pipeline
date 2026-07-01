@@ -6,8 +6,10 @@ export class Chatbox {
     this.chatHistory = document.getElementById("chat-history");
     this.inputElement = document.getElementById("chat-input");
     this.sendButton = document.getElementById("send-btn");
+    this.clearButton = document.getElementById("clear-chat-btn");
 
     this.initEventListeners();
+    this.loadHistory();
   }
 
   // Called by main.js once the PDF is uploaded
@@ -22,6 +24,7 @@ export class Chatbox {
     this.inputElement.addEventListener("keypress", (e) => {
       if (e.key === "Enter") this.sendMessage();
     });
+    this.clearButton.addEventListener("click", () => this.clearHistory());
   }
 
   async sendMessage() {
@@ -63,7 +66,37 @@ export class Chatbox {
     }
   }
 
-  renderMessage(text, sender, isLoading = false) {
+  // 🚨 NEW FUNCTION: Save a single message to browser memory
+  saveToHistory(text, sender) {
+    let history = JSON.parse(localStorage.getItem("aiChatHistory")) || [];
+    history.push({ text, sender });
+    localStorage.setItem("aiChatHistory", JSON.stringify(history));
+  }
+
+  // 🚨 NEW FUNCTION: Load all messages when page refreshes
+  loadHistory() {
+    let history = JSON.parse(localStorage.getItem("aiChatHistory")) || [];
+    history.forEach((msg) => {
+      // Pass 'false' at the end so it doesn't re-save to local storage while loading!
+      this.renderMessage(msg.text, msg.sender, false, false);
+    });
+  }
+
+  clearHistory() {
+    if (
+      confirm("Are you sure you want to clear the chat and reset the document?")
+    ) {
+      // Clear chat memory
+      localStorage.removeItem("aiChatHistory");
+      // Clear file memory
+      localStorage.removeItem("activeFileName");
+
+      // The easiest way to reset the UI completely is to just reload the page!
+      window.location.reload();
+    }
+  }
+
+  renderMessage(text, sender, isLoading = false, save = true) {
     const div = document.createElement("div");
     div.className = `message ${sender}`;
     if (isLoading) div.id = "loading-msg";
@@ -79,54 +112,57 @@ export class Chatbox {
       audioBtn.className = "audio-btn";
       audioBtn.innerHTML = "🔊 Read Aloud";
 
-     audioBtn.onclick = async () => {
-       // 1. If it's already playing, pause it easily!
-       if (window.currentAudio && !window.currentAudio.paused) {
-         window.currentAudio.pause();
-         audioBtn.innerHTML = "▶️ Resume Audio";
-         return;
-       } else if (
-         window.currentAudio &&
-         window.currentAudio.paused &&
-         window.currentAudio.currentTime > 0
-       ) {
-         // If it was paused, resume it!
-         window.currentAudio.play();
-         audioBtn.innerHTML = "⏸️ Pause Audio";
-         return;
-       }
+      audioBtn.onclick = async () => {
+        // 1. If it's already playing, pause it easily!
+        if (window.currentAudio && !window.currentAudio.paused) {
+          window.currentAudio.pause();
+          audioBtn.innerHTML = "▶️ Resume Audio";
+          return;
+        } else if (
+          window.currentAudio &&
+          window.currentAudio.paused &&
+          window.currentAudio.currentTime > 0
+        ) {
+          // If it was paused, resume it!
+          window.currentAudio.play();
+          audioBtn.innerHTML = "⏸️ Pause Audio";
+          return;
+        }
 
-       audioBtn.innerHTML = "⏳ Generating...";
+        audioBtn.innerHTML = "⏳ Generating...";
 
-       try {
-         // 2. Fetch the WAV Base64 from your server
-         const response = await this.api.getAudioFromText(text);
+        try {
+          // 2. Fetch the WAV Base64 from your server
+          const response = await this.api.getAudioFromText(text);
 
-         // 3. Create a standard HTML Audio player (No atob() needed!)
-         window.currentAudio = new Audio(
-           `data:${response.mimeType};base64,${response.audioBase64}`,
-         );
+          // 3. Create a standard HTML Audio player (No atob() needed!)
+          window.currentAudio = new Audio(
+            `data:${response.mimeType};base64,${response.audioBase64}`,
+          );
 
-         // 4. Play it!
-         window.currentAudio.play();
-         audioBtn.innerHTML = "⏸️ Pause Audio";
+          // 4. Play it!
+          window.currentAudio.play();
+          audioBtn.innerHTML = "⏸️ Pause Audio";
 
-         // 5. Reset button when finished
-         window.currentAudio.onended = () => {
-           audioBtn.innerHTML = "🔊 Read Aloud";
-           window.currentAudio = null;
-         };
-       } catch (err) {
-         console.error(err);
-         audioBtn.innerHTML = "❌ Audio Error";
-       }
-     };
+          // 5. Reset button when finished
+          window.currentAudio.onended = () => {
+            audioBtn.innerHTML = "🔊 Read Aloud";
+            window.currentAudio = null;
+          };
+        } catch (err) {
+          console.error(err);
+          audioBtn.innerHTML = "❌ Audio Error";
+        }
+      };
 
       div.appendChild(audioBtn);
     }
 
     this.chatHistory.appendChild(div);
-    this.chatHistory.scrollTop = this.chatHistory.scrollHeight; // Auto-scroll to bottom
+    this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
+    if (save && !isLoading) {
+      this.saveToHistory(text, sender);
+    } // Auto-scroll to bottom
   }
 
   removeLoadingMessage() {
