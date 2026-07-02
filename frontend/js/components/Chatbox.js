@@ -83,17 +83,32 @@ export class Chatbox {
   }
 
   clearHistory() {
-    if (
-      confirm("Are you sure you want to clear the chat and reset the document?")
-    ) {
-      // Clear chat memory
-      localStorage.removeItem("aiChatHistory");
-      // Clear file memory
-      localStorage.removeItem("activeFileName");
+    // 1. Grab the custom modal elements
+    const modal = document.getElementById("custom-modal-overlay");
+    const confirmBtn = document.getElementById("modal-confirm-btn");
+    const cancelBtn = document.getElementById("modal-cancel-btn");
 
-      // The easiest way to reset the UI completely is to just reload the page!
+    // 2. Show the modal with a smooth animation
+    modal.classList.add("show");
+
+    // 3. If they click Confirm (Destroy data)
+    confirmBtn.onclick = () => {
+      localStorage.removeItem("aiChatHistory");
+      localStorage.removeItem("activeFileName");
       window.location.reload();
-    }
+    };
+
+    // 4. If they click Cancel (Hide the modal)
+    cancelBtn.onclick = () => {
+      modal.classList.remove("show");
+    };
+
+    // 5. Bonus UX: If they click the blurred background, close it
+    modal.onclick = (e) => {
+      if (e.target === modal) {
+        modal.classList.remove("show");
+      }
+    };
   }
 
   renderMessage(text, sender, isLoading = false, save = true) {
@@ -101,70 +116,121 @@ export class Chatbox {
     div.className = `message ${sender}`;
     if (isLoading) div.id = "loading-msg";
 
-    // 1. Put the message text in its own span
-    const textSpan = document.createElement("span");
-    textSpan.innerText = text;
-    div.appendChild(textSpan);
+    // 1. Add Avatar Icons!
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.innerHTML =
+      sender === "user"
+        ? '<i class="fa-solid fa-user"></i>'
+        : '<i class="fa-solid fa-robot"></i>';
+    div.appendChild(avatar);
 
-    // 2. 🚨 ADD AUDIO BUTTON (Only for actual bot answers)
+    // 2. Add Message Content Container
+    const contentContainer = document.createElement("div");
+    contentContainer.className = "msg-content";
+
+    // 3. Handle Text vs Modern Typing Indicator
+    if (isLoading) {
+      contentContainer.innerHTML = `
+            <div class="typing-indicator">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        `;
+    } else {
+      const textSpan = document.createElement("span");
+      textSpan.innerText = text;
+      contentContainer.appendChild(textSpan);
+    }
+
+    div.appendChild(contentContainer);
+
+    // 4. ADD AUDIO BUTTON (Only for actual bot answers)
     if (sender === "bot" && !isLoading) {
       const audioBtn = document.createElement("button");
       audioBtn.className = "audio-btn";
-      audioBtn.innerHTML = "🔊 Read Aloud";
-
-      audioBtn.onclick = async () => {
-        // 1. If it's already playing, pause it easily!
-        if (window.currentAudio && !window.currentAudio.paused) {
-          window.currentAudio.pause();
-          audioBtn.innerHTML = "▶️ Resume Audio";
-          return;
-        } else if (
-          window.currentAudio &&
-          window.currentAudio.paused &&
-          window.currentAudio.currentTime > 0
-        ) {
-          // If it was paused, resume it!
-          window.currentAudio.play();
-          audioBtn.innerHTML = "⏸️ Pause Audio";
-          return;
+      audioBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Read Aloud';
+      audioBtn.type = "button";
+      audioBtn.onclick = async (e) => {
+        e.preventDefault();
+        if (window.currentAudioBtn === audioBtn) {
+          // If it's playing, pause it
+          if (window.currentAudio && !window.currentAudio.paused) {
+            window.currentAudio.pause();
+            audioBtn.innerHTML =
+              '<i class="fa-solid fa-play"></i> Resume Audio';
+            return;
+          }
+          // If it's paused, resume it
+          else if (
+            window.currentAudio &&
+            window.currentAudio.paused &&
+            window.currentAudio.currentTime > 0
+          ) {
+            window.currentAudio.play();
+            audioBtn.innerHTML =
+              '<i class="fa-solid fa-pause"></i> Pause Audio';
+            return;
+          }
         }
 
-        audioBtn.innerHTML = "⏳ Generating...";
+        // 2. IS THE USER CLICKING A DIFFERENT BUTTON?
+        if (window.currentAudio) {
+          // Stop the old audio completely
+          window.currentAudio.pause();
+          window.currentAudio.currentTime = 0;
+
+          // Reset the OLD button's text back to default
+          if (window.currentAudioBtn) {
+            window.currentAudioBtn.innerHTML =
+              '<i class="fa-solid fa-volume-high"></i> Read Aloud';
+          }
+        }
+
+        // 3. START GENERATING AUDIO FOR THE NEW BUTTON
+        // Tell the browser this is now the active button
+        window.currentAudioBtn = audioBtn;
+        audioBtn.innerHTML =
+          '<i class="fa-solid fa-hourglass-half"></i> Generating...';
 
         try {
-          // 2. Fetch the WAV Base64 from your server
+          // Fetch and play the new audio
           const response = await this.api.getAudioFromText(text);
-
-          // 3. Create a standard HTML Audio player (No atob() needed!)
           window.currentAudio = new Audio(
             `data:${response.mimeType};base64,${response.audioBase64}`,
           );
-
-          // 4. Play it!
           window.currentAudio.play();
-          audioBtn.innerHTML = "⏸️ Pause Audio";
 
-          // 5. Reset button when finished
+          // Set the new button to Pause
+          audioBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause Audio';
+
+          // 4. RESET EVERYTHING WHEN FINISHED
           window.currentAudio.onended = () => {
-            audioBtn.innerHTML = "🔊 Read Aloud";
+            audioBtn.innerHTML =
+              '<i class="fa-solid fa-volume-high"></i> Read Aloud';
             window.currentAudio = null;
+            window.currentAudioBtn = null;
           };
         } catch (err) {
           console.error(err);
-          audioBtn.innerHTML = "❌ Audio Error";
+          audioBtn.innerHTML =
+            '<i class="fa-solid fa-circle-xmark"></i> Audio Error';
+          window.currentAudioBtn = null;
         }
       };
 
-      div.appendChild(audioBtn);
+      contentContainer.appendChild(document.createElement("br")); // line break for neatness
+      contentContainer.appendChild(audioBtn);
     }
 
     this.chatHistory.appendChild(div);
     this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
+
     if (save && !isLoading) {
       this.saveToHistory(text, sender);
-    } // Auto-scroll to bottom
+    }
   }
-
   removeLoadingMessage() {
     const loader = document.getElementById("loading-msg");
     if (loader) loader.remove();

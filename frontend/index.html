@@ -3,36 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Internal Policy AI Chat</title>
+    <title>DocuSight | Document Intelligence</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
+    <div id="page-loader" class="page-loader">
+        <div class="spinner">
+            <div class="double-bounce1"></div>
+            <div class="double-bounce2"></div>
+        </div>
+        <h2 class="loader-text">Initializing DocuSight<span class="dots">...</span></h2>
+    </div>
+
     <div class="app-container">
         <aside class="sidebar">
-            <h2>Document Hub</h2>
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <h2>DocuSight</h2>
+                </div>
+                <p class="subtitle">Document Hub</p>
+            </div>
+            
             <div id="upload-container" class="upload-box">
                 <input type="file" id="pdf-input" accept=".pdf, .docx, .png, .jpg, .jpeg, .txt, .csv" hidden>
-                <button id="upload-btn" class="btn">Select PDF Manual</button>
-                <p id="upload-status" class="status-text">No file uploaded</p>
+                <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                <h3>Upload Manual</h3>
+                <p>Drag & Drop or Click</p>
+                <button id="upload-btn" class="btn btn-outline">
+                    <i class="fa-solid fa-file-pdf"></i> Select File
+                </button>
+                <p id="upload-status" class="status-text">No file active</p>
             </div>
         </aside>
 
        <main class="chat-area">
-            <header style="display: flex; justify-content: space-between; align-items: center; padding-right: 20px;">
-                <h2>AI Assistant</h2>
-                <button id="clear-chat-btn" style="background: #fee2e2; color: #ef4444; border: 1px solid #ef4444; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.9rem;">🗑️ Clear Chat</button>
+            <header class="chat-header">
+                <div class="header-title">
+                    <i class="fa-solid fa-robot ai-icon"></i>
+                    <h2>AI Assistant</h2>
+                </div>
+                <button id="clear-chat-btn" class="btn-clear" title="Clear Conversation">
+                    <i class="fa-solid fa-trash-can"></i> <span>Reset Chat</span>
+                </button>
             </header>
+
             <div id="chat-history" class="chat-history">
-                <div class="message bot">Welcome! Upload a PDF to start asking questions.</div>
+                <div class="message bot welcome-msg">
+                    <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+                    <div class="msg-content">
+                        Welcome to DocuSight! Please upload a document to begin our analysis.
+                    </div>
+                </div>
             </div>
 
-            <div class="chat-input-container">
-                <input type="text" id="chat-input" placeholder="Ask a question about the document..." disabled>
-                <button id="send-btn" class="btn" disabled>Send</button>
+            <div class="chat-input-wrapper">
+                <div class="chat-input-container">
+                    <input type="text" id="chat-input" placeholder="Ask a question about the document..." disabled>
+                    <button id="send-btn" class="btn btn-primary" disabled>
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+                <p class="input-footer">AI can make mistakes. Verify important information.</p>
             </div>
         </main>
     </div>
 
+
+    <div id="custom-modal-overlay" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-icon">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="modal-title">Reset Workspace?</h3>
+            <p class="modal-message">Are you sure you want to clear the conversation and remove the active document? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button id="modal-cancel-btn" class="btn btn-secondary">Cancel</button>
+                <button id="modal-confirm-btn" class="btn btn-danger">Yes, Reset</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="./js/main.js"></script>
+    
+    <script>
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const loader = document.getElementById('page-loader');
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 500);
+            }, 1200); // Show off the loader for a brief moment
+        });
+    </script>
 </body>
 </html>

@@ -107,10 +107,10 @@ async function generateSpeech(text) {
   const wav = new WaveFile();
   wav.fromScratch(1, 24000, "16", int16Samples);
 
-  // Get the final playable buffer
+  
   const finalWavBuffer = Buffer.from(wav.toBuffer());
 
-  // D. SAVE TO HARD DRIVE: Save it so we never ask Gemini for this text again!
+ 
   fs.writeFileSync(filePath, finalWavBuffer);
   console.log(`💾 SAVED: New audio cached at ${filePath}`);
 
@@ -120,5 +120,5 @@ async function generateSpeech(text) {
   };
 }
 
-// ⚠️ Don't forget to export the new function at the very bottom!
+
 module.exports = { createEmbeddings, generateAnswer, generateSpeech };
