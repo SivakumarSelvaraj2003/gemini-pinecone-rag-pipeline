@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
+const path = require("path");
 require("dotenv").config();
 
 // Import our Lego Blocks
@@ -112,6 +113,14 @@ app.post("/api/tts", async (req, res) => {
         console.error("Audio Generation Error:", error);
         res.status(500).json({ error: "Failed to generate audio" });
     }
+});
+
+const frontendPath = path.join(__dirname, "../frontend");
+app.use(express.static(frontendPath));
+
+// If the user visits the main URL, send them the index.html file!
+app.get("*", (req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
 });
 
 // Start the server

@@ -1,5 +1,7 @@
 // The base URL for your future Node.js server
-const API_URL = 'http://localhost:3000/api';
+/* const API_URL = 'http://localhost:3000/api'; */
+
+const API_URL = "/api";
 
 export const ApiService = {
   // Sends the PDF file to the backend
