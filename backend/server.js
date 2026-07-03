@@ -119,7 +119,8 @@ const frontendPath = path.join(__dirname, "../frontend");
 app.use(express.static(frontendPath));
 
 // If the user visits the main URL, send them the index.html file!
-app.get("*", (req, res) => {
+// Remove the quotes, and use /.*/ instead!
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));
 });
 
